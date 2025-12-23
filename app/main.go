@@ -24,42 +24,55 @@ func fetchUrl(url string) string {
 	}
 
 	result := byteToJson(body)
-	return result
-}
-
-func byteToJson(body []byte) string {
-	var result map[string]interface{}
-	err := json.Unmarshal(body, &result)
-	if err != nil {
+	if result["status"] != "success" {
 		return ""
 	}
 	return result["message"].(string)
 }
 
-func main() {
-	// Station8
+func byteToJson(body []byte) map[string]interface{} {
+	var result map[string]interface{}
+	err := json.Unmarshal(body, &result)
+	if err != nil {
+		return nil
+	}
+	return result
+}
 
-	// 引数を受け取る処理を追加
-	/* オプション引数仕様
-	引数名はimagesとする。
-	例）dog-cli random --images 2
-	短縮系: -i
-	オプション引数が指定されていない場合やオプション引数のデフォルト値は1とする。
+func main() { // Station9
+	/*
+			問題
+		Station8 でランダムに画像を取得するサブコマンドを実装しました。 この Station で犬種を指定して画像を取得できるようにしましょう。
+
+		仕様
+		コマンドはdog-cli breed {犬種名}とする。
+		犬種が指定されていない場合はエラーとする。
+		API から取得できない犬種や無効な文字列の場合はエラーとする
+		エラーメッセージ
+		犬種が指定されていない場合はError: 犬種が指定されていませんと出力する。 例）
+		$ go run ./app/main.go breed
+
+		Error: 犬種が指定されていません
+		API から取得できない犬種や無効な文字列の場合はError: 無効な犬種ですと出力する。 例）
+		$ go run ./app/main.go breed invalid
+
+		Error: 無効な犬種です
 	*/
+	// API のエンドポイントはGET https://dog.ceo/api/breed/{犬種名}/images/randomです。
+
 	args := os.Args
-	images := 1
-	if len(args) >= 4 && (args[2] == "--images" || args[2] == "-i") {
-		fmt.Sscanf(args[3], "%d", &images)
+	if len(args) < 3 || args[1] != "breed" {
+		fmt.Println("Error: 犬種が指定されていません")
+		os.Exit(1)
+		return
 	}
-
-	for i := 0; i < images; i++ {
-		/* 	問題
-		Dog API からランダムに画像 URL を取得し、その URL を出力するサブコマンドrandomを実装しましょう。
-		API のエンドポイントはGET https://dog.ceo/api/breeds/image/randomです。
-		*/
-		url := "https://dog.ceo/api/breeds/image/random"
-		massage := fetchUrl(url)
-		fmt.Println(massage)
+	breed := args[2]
+	url := fmt.Sprintf("https://dog.ceo/api/breed/%s/images/random", breed)
+	massage := fetchUrl(url)
+	if massage == "" {
+		fmt.Println("Error: 無効な犬種です")
+		os.Exit(1)
+		return
 	}
-
+	fmt.Println(massage)
 }
